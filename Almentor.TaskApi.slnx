@@ -1,0 +1,11 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Almentor.TaskApi.Api/Almentor.TaskApi.Api.csproj" />
+    <Project Path="src/Almentor.TaskApi.Application/Almentor.TaskApi.Application.csproj" />
+    <Project Path="src/Almentor.TaskApi.Domain/Almentor.TaskApi.Domain.csproj" />
+    <Project Path="src/Almentor.TaskApi.Infrastructure/Almentor.TaskApi.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Almentor.TaskApi.Tests/Almentor.TaskApi.Tests.csproj" />
+  </Folder>
+</Solution>

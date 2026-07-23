@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.9" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Almentor.TaskApi.Application\Almentor.TaskApi.Application.csproj" />
+    <ProjectReference Include="..\Almentor.TaskApi.Infrastructure\Almentor.TaskApi.Infrastructure.csproj" />
+  </ItemGroup>
+
+</Project>
