@@ -1,6 +1,7 @@
 using Almentor.TaskApi.Application.Common.Interfaces;
 using Almentor.TaskApi.Infrastructure.Persistence;
 using Almentor.TaskApi.Infrastructure.Persistence.Repositories;
+using Almentor.TaskApi.Infrastructure.Time;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -30,6 +31,8 @@ public static class DependencyInjection
                 sql.MigrationsAssembly(typeof(AppDbContext).Assembly.GetName().Name)));
 
         services.AddScoped<IProjectRepository, ProjectRepository>();
+        services.AddScoped<ITaskRepository, TaskRepository>();
+        services.AddSingleton<IDateTimeProvider, SystemDateTimeProvider>();
 
         return services;
     }

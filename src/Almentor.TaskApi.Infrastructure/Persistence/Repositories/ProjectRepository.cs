@@ -67,9 +67,16 @@ public class ProjectRepository : IProjectRepository
         await _context.Projects.AddAsync(project, ct);
     }
 
-    public void Update(Project project) => _context.Projects.Update(project);
+    public void Update(Project project) =>
+        // Entry(project).State, not DbSet.Update(project): if GetByIdAsync ever
+        // starts Include()-ing Tasks, DbSet.Update() would walk that graph and
+        // mark every task Modified too. Targeting just this entry avoids that
+        // regardless of what gets Included later — see TaskRepository for the
+        // same fix where this is already a live issue.
+        _context.Entry(project).State = EntityState.Modified;
 
-    public void Remove(Project project) => _context.Projects.Remove(project);
+    public void Remove(Project project) =>
+        _context.Entry(project).State = EntityState.Deleted;
 
     public async Task SaveChangesAsync(CancellationToken ct)
     {

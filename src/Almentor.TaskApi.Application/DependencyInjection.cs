@@ -1,5 +1,6 @@
 using System.Reflection;
 using Almentor.TaskApi.Application.Features.Projects;
+using Almentor.TaskApi.Application.Features.Tasks;
 using FluentValidation;
 using Mapster;
 using MapsterMapper;
@@ -27,6 +28,7 @@ public static class DependencyInjection
         services.AddValidatorsFromAssembly(assembly);
 
         services.AddScoped<IProjectService, ProjectService>();
+        services.AddScoped<ITaskService, TaskService>();
 
         return services;
     }

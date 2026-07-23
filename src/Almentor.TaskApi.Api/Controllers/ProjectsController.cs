@@ -18,7 +18,7 @@ public class ProjectsController : ControllerBase
 
     [HttpPost]
     [ProducesResponseType(typeof(ApiResponse<ProjectResponse>), StatusCodes.Status201Created)]
-    public async Task<IActionResult> Create([FromBody] CreateProjectRequest request, CancellationToken ct)
+    public async Task<ActionResult<ApiResponse<ProjectResponse>>> Create([FromBody] CreateProjectRequest request, CancellationToken ct)
     {
         var project = await _projectService.CreateAsync(request, ct);
 
@@ -30,7 +30,7 @@ public class ProjectsController : ControllerBase
 
     [HttpGet]
     [ProducesResponseType(typeof(ApiResponse<IReadOnlyList<ProjectResponse>>), StatusCodes.Status200OK)]
-    public async Task<IActionResult> GetPaged([FromQuery] PaginationParams pagination, CancellationToken ct)
+    public async Task<ActionResult<ApiResponse<IReadOnlyList<ProjectResponse>>>> GetPaged([FromQuery] PaginationParams pagination, CancellationToken ct)
     {
         var page = await _projectService.GetPagedAsync(pagination, ct);
 
@@ -45,7 +45,7 @@ public class ProjectsController : ControllerBase
     [HttpGet("{id:guid}")]
     [ProducesResponseType(typeof(ApiResponse<ProjectResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> GetById(Guid id, CancellationToken ct)
+    public async Task<ActionResult<ApiResponse<ProjectResponse>>> GetById(Guid id, CancellationToken ct)
     {
         var project = await _projectService.GetByIdAsync(id, ct);
         return Ok(ApiResponse<ProjectResponse>.Ok(project));
@@ -55,7 +55,7 @@ public class ProjectsController : ControllerBase
     [ProducesResponseType(typeof(ApiResponse<ProjectResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status409Conflict)]
-    public async Task<IActionResult> Update(Guid id, [FromBody] UpdateProjectRequest request, CancellationToken ct)
+    public async Task<ActionResult<ApiResponse<ProjectResponse>>> Update(Guid id, [FromBody] UpdateProjectRequest request, CancellationToken ct)
     {
         var project = await _projectService.UpdateAsync(id, request, ct);
         return Ok(ApiResponse<ProjectResponse>.Ok(project));
