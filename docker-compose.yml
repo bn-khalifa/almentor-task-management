@@ -7,7 +7,8 @@ services:
       MSSQL_SA_PASSWORD: ${SA_PASSWORD}
       MSSQL_PID: "Developer"
     ports:
-      - "1433:1433"
+      # Host 14330 avoids clashing with a local SQL Server (e.g. SQLEXPRESS) on 1433.
+      - "14330:1433"
     volumes:
       - sqlserver-data:/var/opt/mssql
     healthcheck:
