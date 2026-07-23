@@ -1,4 +1,6 @@
+using Almentor.TaskApi.Application.Common.Interfaces;
 using Almentor.TaskApi.Infrastructure.Persistence;
+using Almentor.TaskApi.Infrastructure.Persistence.Repositories;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -26,6 +28,8 @@ public static class DependencyInjection
             options.UseSqlServer(connectionString, sql =>
                 // Keep migrations in this (Infrastructure) assembly, not the API.
                 sql.MigrationsAssembly(typeof(AppDbContext).Assembly.GetName().Name)));
+
+        services.AddScoped<IProjectRepository, ProjectRepository>();
 
         return services;
     }
