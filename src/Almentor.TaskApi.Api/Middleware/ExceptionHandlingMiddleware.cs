@@ -64,6 +64,14 @@ public class ExceptionHandlingMiddleware
                 HttpStatusCode.Conflict,
                 new ErrorDetail { Code = ErrorCodes.DuplicateName, Message = duplicateEx.Message }),
 
+            EmailAlreadyExistsException emailEx => (
+                HttpStatusCode.Conflict,
+                new ErrorDetail { Code = ErrorCodes.EmailTaken, Message = emailEx.Message }),
+
+            InvalidCredentialsException credEx => (
+                HttpStatusCode.Unauthorized,
+                new ErrorDetail { Code = ErrorCodes.InvalidCredentials, Message = credEx.Message }),
+
             _ => HandleUnexpected(exception, traceId)
         };
 

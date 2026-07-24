@@ -1,8 +1,11 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Almentor.TaskApi.Api.Extensions;
 using Almentor.TaskApi.Api.Middleware;
+using Almentor.TaskApi.Api.Services;
 using Almentor.TaskApi.Application;
 using Almentor.TaskApi.Application.Common.Errors;
+using Almentor.TaskApi.Application.Common.Interfaces;
 using Almentor.TaskApi.Application.Common.Models;
 using Almentor.TaskApi.Infrastructure;
 using Microsoft.AspNetCore.Mvc;
@@ -65,8 +68,13 @@ builder.Services.AddOpenApi();
 
 // Application layer: Mapster, FluentValidation, use-case services (see AddApplication).
 builder.Services.AddApplication();
-// Infrastructure layer: EF Core DbContext + SQL Server (see AddInfrastructure).
+// Infrastructure layer: EF Core DbContext + SQL Server + auth services (see AddInfrastructure).
 builder.Services.AddInfrastructure(builder.Configuration);
+
+// Auth: JWT bearer + the current-user accessor that reads the token's `sub`.
+builder.Services.AddJwtAuthentication(builder.Configuration);
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
 
 var app = builder.Build();
 
@@ -81,6 +89,7 @@ app.UseMiddleware<ExceptionHandlingMiddleware>();
 
 app.UseHttpsRedirection();
 
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();

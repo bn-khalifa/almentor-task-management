@@ -30,7 +30,7 @@ public class TaskServiceTests
     [Fact]
     public async Task Create_without_status_or_priority_applies_defaults()
     {
-        var project = new Project { Id = Guid.NewGuid(), Name = "Alpha" };
+        var project = new Project { Id = Guid.NewGuid(), Name = "Alpha", OwnerId = _factory.CurrentUserId };
         _factory.ProjectRepository
             .GetByIdAsync(project.Id, Arg.Any<CancellationToken>())
             .Returns(project);
@@ -50,7 +50,7 @@ public class TaskServiceTests
         // Guards against the enum-zero-value sentinel trap (Stage 2): Low is the
         // CLR default, so a naive "?? default" implementation could silently
         // swap a real Low for Medium.
-        var project = new Project { Id = Guid.NewGuid(), Name = "Alpha" };
+        var project = new Project { Id = Guid.NewGuid(), Name = "Alpha", OwnerId = _factory.CurrentUserId };
         _factory.ProjectRepository
             .GetByIdAsync(project.Id, Arg.Any<CancellationToken>())
             .Returns(project);
@@ -113,14 +113,15 @@ public class TaskServiceTests
             _factory.TaskService.GetPagedAsync(Guid.NewGuid(), new TaskQueryParameters(), CancellationToken.None));
     }
 
-    private static TaskItem MakeTrackedTask(TaskItemStatus status)
+    private TaskItem MakeTrackedTask(TaskItemStatus status)
     {
-        var project = new Project { Id = Guid.NewGuid(), Name = "Alpha" };
+        // Owned by the current user so the service's ownership check passes.
+        var project = new Project { Id = Guid.NewGuid(), Name = "Alpha", OwnerId = _factory.CurrentUserId };
         return new TaskItem
         {
             Id = Guid.NewGuid(),
             ProjectId = project.Id,
-            Project = project, // TaskResponse mapping reads Project.Name; must be non-null.
+            Project = project, // TaskResponse mapping (and ownership check) reads Project; must be non-null.
             Title = "Ship it",
             Status = status,
             Priority = TaskItemPriority.Medium

@@ -8,40 +8,45 @@ using MapsterMapper;
 
 namespace Almentor.TaskApi.Application.Features.Projects;
 
-/// Orchestrates Project use-cases: validate the request, enforce business rules
-/// (duplicate name, existence), then delegate persistence to the repository.
+/// Orchestrates Project use-cases: validate, enforce business rules (duplicate
+/// name, existence) and per-user ownership, then delegate persistence.
 public class ProjectService : IProjectService
 {
     private readonly IProjectRepository _repository;
     private readonly IValidator<CreateProjectRequest> _createValidator;
     private readonly IValidator<UpdateProjectRequest> _updateValidator;
     private readonly IMapper _mapper;
+    private readonly ICurrentUserService _currentUser;
 
     public ProjectService(
         IProjectRepository repository,
         IValidator<CreateProjectRequest> createValidator,
         IValidator<UpdateProjectRequest> updateValidator,
-        IMapper mapper)
+        IMapper mapper,
+        ICurrentUserService currentUser)
     {
         _repository = repository;
         _createValidator = createValidator;
         _updateValidator = updateValidator;
         _mapper = mapper;
+        _currentUser = currentUser;
     }
 
     public async Task<ProjectResponse> CreateAsync(CreateProjectRequest request, CancellationToken ct)
     {
         await _createValidator.ValidateAndThrowAsync(request, ct);
 
-        // App-layer pre-check gives a clean 409 in the common case; the unique
-        // index in the DB is the race-safe backstop the repository translates
-        // into the same DuplicateNameException on SaveChangesAsync.
-        if (await _repository.ExistsByNameAsync(request.Name, excludeId: null, ct))
+        var ownerId = _currentUser.UserId;
+
+        // Name uniqueness is per-owner: the pre-check and the DB's composite
+        // filtered unique index both scope by owner.
+        if (await _repository.ExistsByNameAsync(ownerId, request.Name, excludeId: null, ct))
         {
             throw new DuplicateNameException(request.Name);
         }
 
         var project = _mapper.Map<Project>(request);
+        project.OwnerId = ownerId;
 
         await _repository.AddAsync(project, ct);
         await _repository.SaveChangesAsync(ct);
@@ -51,15 +56,13 @@ public class ProjectService : IProjectService
 
     public async Task<ProjectResponse> GetByIdAsync(Guid id, CancellationToken ct)
     {
-        var project = await _repository.GetByIdAsync(id, ct)
-            ?? throw new NotFoundException(nameof(Project), id);
-
+        var project = await GetOwnedOrThrowAsync(id, ct);
         return _mapper.Map<ProjectResponse>(project);
     }
 
     public async Task<PagedResult<ProjectResponse>> GetPagedAsync(PaginationParams pagination, CancellationToken ct)
     {
-        var page = await _repository.GetPagedAsync(pagination, ct);
+        var page = await _repository.GetPagedAsync(_currentUser.UserId, pagination, ct);
 
         return new PagedResult<ProjectResponse>
         {
@@ -74,10 +77,9 @@ public class ProjectService : IProjectService
     {
         await _updateValidator.ValidateAndThrowAsync(request, ct);
 
-        var project = await _repository.GetByIdAsync(id, ct)
-            ?? throw new NotFoundException(nameof(Project), id);
+        var project = await GetOwnedOrThrowAsync(id, ct);
 
-        if (await _repository.ExistsByNameAsync(request.Name, excludeId: id, ct))
+        if (await _repository.ExistsByNameAsync(_currentUser.UserId, request.Name, excludeId: id, ct))
         {
             throw new DuplicateNameException(request.Name);
         }
@@ -94,10 +96,27 @@ public class ProjectService : IProjectService
         // Load tracked WITH tasks so the delete cascades to them in memory —
         // required for soft-delete, since the DB's ON DELETE CASCADE only fires
         // on a hard delete, which the DbContext converts away.
-        var project = await _repository.GetByIdWithTasksAsync(id, ct)
-            ?? throw new NotFoundException(nameof(Project), id);
+        var project = await _repository.GetByIdWithTasksAsync(id, ct);
+        EnsureOwned(project, id);
 
-        _repository.Remove(project);
+        _repository.Remove(project!);
         await _repository.SaveChangesAsync(ct);
+    }
+
+    private async Task<Project> GetOwnedOrThrowAsync(Guid id, CancellationToken ct)
+    {
+        var project = await _repository.GetByIdAsync(id, ct);
+        EnsureOwned(project, id);
+        return project!;
+    }
+
+    // A project the caller doesn't own is treated as not found — never reveal
+    // that someone else's project exists (404, not 403).
+    private void EnsureOwned(Project? project, Guid id)
+    {
+        if (project is null || project.OwnerId != _currentUser.UserId)
+        {
+            throw new NotFoundException(nameof(Project), id);
+        }
     }
 }

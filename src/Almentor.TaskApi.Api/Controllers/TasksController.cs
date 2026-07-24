@@ -2,12 +2,14 @@ using Almentor.TaskApi.Application.Common.Models;
 using Almentor.TaskApi.Application.Features.Tasks;
 using Almentor.TaskApi.Application.Features.Tasks.Dtos;
 using Almentor.TaskApi.Application.Features.Tasks.Querying;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Almentor.TaskApi.Api.Controllers;
 
 [ApiController]
 [Route("api/tasks")]
+[Authorize]
 public class TasksController : ControllerBase
 {
     private readonly ITaskService _taskService;

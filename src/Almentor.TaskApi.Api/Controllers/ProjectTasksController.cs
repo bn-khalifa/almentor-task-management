@@ -2,6 +2,7 @@ using Almentor.TaskApi.Application.Common.Models;
 using Almentor.TaskApi.Application.Features.Tasks;
 using Almentor.TaskApi.Application.Features.Tasks.Dtos;
 using Almentor.TaskApi.Application.Features.Tasks.Querying;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Almentor.TaskApi.Api.Controllers;
@@ -9,6 +10,7 @@ namespace Almentor.TaskApi.Api.Controllers;
 // Task operations that are scoped to a parent project.
 [ApiController]
 [Route("api/projects/{projectId:guid}/tasks")]
+[Authorize]
 public class ProjectTasksController : ControllerBase
 {
     private readonly ITaskService _taskService;

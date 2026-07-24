@@ -21,6 +21,7 @@ public class TaskService : ITaskService
     private readonly IValidator<TaskQueryParameters> _queryValidator;
     private readonly IMapper _mapper;
     private readonly ILogger<TaskService> _logger;
+    private readonly ICurrentUserService _currentUser;
 
     public TaskService(
         ITaskRepository taskRepository,
@@ -29,7 +30,8 @@ public class TaskService : ITaskService
         IValidator<UpdateTaskRequest> updateValidator,
         IValidator<TaskQueryParameters> queryValidator,
         IMapper mapper,
-        ILogger<TaskService> logger)
+        ILogger<TaskService> logger,
+        ICurrentUserService currentUser)
     {
         _taskRepository = taskRepository;
         _projectRepository = projectRepository;
@@ -38,14 +40,20 @@ public class TaskService : ITaskService
         _queryValidator = queryValidator;
         _mapper = mapper;
         _logger = logger;
+        _currentUser = currentUser;
     }
 
     public async Task<TaskResponse> CreateAsync(Guid projectId, CreateTaskRequest request, CancellationToken ct)
     {
         await _createValidator.ValidateAndThrowAsync(request, ct);
 
-        var project = await _projectRepository.GetByIdAsync(projectId, ct)
-            ?? throw new NotFoundException(nameof(Project), projectId);
+        // Must own the parent project. A project owned by someone else is treated
+        // as not found — same as if it didn't exist.
+        var project = await _projectRepository.GetByIdAsync(projectId, ct);
+        if (project is null || project.OwnerId != _currentUser.UserId)
+        {
+            throw new NotFoundException(nameof(Project), projectId);
+        }
 
         var task = _mapper.Map<TaskItem>(request);
         task.ProjectId = projectId;
@@ -63,14 +71,18 @@ public class TaskService : ITaskService
     {
         await _queryValidator.ValidateAndThrowAsync(query, ct);
 
-        // Scoped list: a request for a non-existent project's tasks is a 404,
-        // not an empty page as the project itself doesn't exist.
-        if (projectId is not null && await _projectRepository.GetByIdAsync(projectId.Value, ct) is null)
+        // Scoped list: a request for a non-existent OR unowned project's tasks
+        // is a 404 (the project isn't visible to this caller), not an empty page.
+        if (projectId is not null)
         {
-            throw new NotFoundException(nameof(Project), projectId.Value);
+            var project = await _projectRepository.GetByIdAsync(projectId.Value, ct);
+            if (project is null || project.OwnerId != _currentUser.UserId)
+            {
+                throw new NotFoundException(nameof(Project), projectId.Value);
+            }
         }
 
-        var typedQuery = ToTypedQuery(projectId, query);
+        var typedQuery = ToTypedQuery(_currentUser.UserId, projectId, query);
         var page = await _taskRepository.GetPagedAsync(typedQuery, ct);
 
         return new PagedResult<TaskResponse>
@@ -84,8 +96,9 @@ public class TaskService : ITaskService
 
     // Parses the validated raw query into fully-typed values. Safe to parse
     // without re-checking. Defaults: sort=created_at, direction=desc.
-    private static TaskListQuery ToTypedQuery(Guid? projectId, TaskQueryParameters query) => new()
+    private static TaskListQuery ToTypedQuery(Guid ownerId, Guid? projectId, TaskQueryParameters query) => new()
     {
+        OwnerId = ownerId,
         ProjectId = projectId,
         Status = EnumSnakeParser.ParseOrNull<TaskItemStatus>(query.Status),
         Priority = EnumSnakeParser.ParseOrNull<TaskItemPriority>(query.Priority),
@@ -99,9 +112,7 @@ public class TaskService : ITaskService
 
     public async Task<TaskResponse> GetByIdAsync(Guid id, CancellationToken ct)
     {
-        var task = await _taskRepository.GetByIdAsync(id, ct)
-            ?? throw new NotFoundException("Task", id);
-
+        var task = await GetOwnedOrThrowAsync(id, ct);
         return _mapper.Map<TaskResponse>(task);
     }
 
@@ -109,8 +120,7 @@ public class TaskService : ITaskService
     {
         await _updateValidator.ValidateAndThrowAsync(request, ct);
 
-        var task = await _taskRepository.GetByIdAsync(id, ct)
-            ?? throw new NotFoundException("Task", id);
+        var task = await GetOwnedOrThrowAsync(id, ct);
 
         var previousStatus = task.Status;
 
@@ -130,10 +140,22 @@ public class TaskService : ITaskService
 
     public async Task DeleteAsync(Guid id, CancellationToken ct)
     {
-        var task = await _taskRepository.GetByIdAsync(id, ct)
-            ?? throw new NotFoundException("Task", id);
+        var task = await GetOwnedOrThrowAsync(id, ct);
 
         _taskRepository.Remove(task);
         await _taskRepository.SaveChangesAsync(ct);
+    }
+
+    // A task belongs to the caller iff its project does. GetByIdAsync Includes
+    // Project, so Project.OwnerId is available. Unowned/missing → 404.
+    private async Task<TaskItem> GetOwnedOrThrowAsync(Guid id, CancellationToken ct)
+    {
+        var task = await _taskRepository.GetByIdAsync(id, ct);
+        if (task is null || task.Project.OwnerId != _currentUser.UserId)
+        {
+            throw new NotFoundException("Task", id);
+        }
+
+        return task;
     }
 }

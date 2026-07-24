@@ -20,6 +20,10 @@ public class ApplicationServicesFactory
     public ITaskRepository TaskRepository { get; } = Substitute.For<ITaskRepository>();
     public FakeDateTimeProvider Clock { get; init; } = new(new DateOnly(2026, 7, 24));
     public TestLogger<TaskService> TaskServiceLogger { get; } = new();
+    public FakeCurrentUserService CurrentUser { get; } = new();
+
+    /// <summary>The id services will stamp on / check against — expose it so tests can match owned entities.</summary>
+    public Guid CurrentUserId => CurrentUser.UserId;
 
     private readonly Lazy<ServiceProvider> _provider;
 
@@ -31,6 +35,7 @@ public class ApplicationServicesFactory
             services.AddLogging();
             services.AddApplication();
             services.AddSingleton<IDateTimeProvider>(Clock);
+            services.AddSingleton<ICurrentUserService>(CurrentUser);
             services.AddScoped(_ => ProjectRepository);
             services.AddScoped(_ => TaskRepository);
             // Registered after AddApplication/AddLogging so it wins resolution

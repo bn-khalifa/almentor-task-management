@@ -35,9 +35,12 @@ public class ProjectRepository : IProjectRepository
             .Include(p => p.Tasks)
             .FirstOrDefaultAsync(p => p.Id == id, ct);
 
-    public async Task<PagedResult<Project>> GetPagedAsync(PaginationParams pagination, CancellationToken ct)
+    public async Task<PagedResult<Project>> GetPagedAsync(Guid ownerId, PaginationParams pagination, CancellationToken ct)
     {
-        var query = _context.Projects.AsNoTracking().OrderBy(p => p.CreatedAt);
+        // Scoped to the owner (backed by IX_Projects_OwnerId).
+        var query = _context.Projects.AsNoTracking()
+            .Where(p => p.OwnerId == ownerId)
+            .OrderBy(p => p.CreatedAt);
 
         // Two focused queries (count + page) rather than loading everything into memory to count it.
         var total = await query.CountAsync(ct);
@@ -56,10 +59,11 @@ public class ProjectRepository : IProjectRepository
         };
     }
 
-    public Task<bool> ExistsByNameAsync(string name, Guid? excludeId, CancellationToken ct)
+    public Task<bool> ExistsByNameAsync(Guid ownerId, string name, Guid? excludeId, CancellationToken ct)
     {
+        // Uniqueness is per owner, matching the composite unique index.
         var query = _context.Projects.AsNoTracking()
-            .Where(p => p.Name.ToLower() == name.ToLower());
+            .Where(p => p.OwnerId == ownerId && p.Name.ToLower() == name.ToLower());
 
         if (excludeId is not null)
         {

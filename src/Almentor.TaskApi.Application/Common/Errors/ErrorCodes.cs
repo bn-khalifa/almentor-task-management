@@ -9,4 +9,8 @@ public static class ErrorCodes
     public const string DuplicateName = "DUPLICATE_NAME";
     public const string Conflict = "CONFLICT";
     public const string InternalError = "INTERNAL_ERROR";
+    public const string EmailTaken = "EMAIL_TAKEN";
+    public const string InvalidCredentials = "INVALID_CREDENTIALS";
+    public const string Unauthorized = "UNAUTHORIZED";
+    public const string Forbidden = "FORBIDDEN";
 }

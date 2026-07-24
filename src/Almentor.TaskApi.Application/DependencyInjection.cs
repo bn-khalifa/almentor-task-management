@@ -1,4 +1,5 @@
 using System.Reflection;
+using Almentor.TaskApi.Application.Features.Auth;
 using Almentor.TaskApi.Application.Features.Projects;
 using Almentor.TaskApi.Application.Features.Tasks;
 using FluentValidation;
@@ -29,6 +30,7 @@ public static class DependencyInjection
 
         services.AddScoped<IProjectService, ProjectService>();
         services.AddScoped<ITaskService, TaskService>();
+        services.AddScoped<IAuthService, AuthService>();
 
         return services;
     }

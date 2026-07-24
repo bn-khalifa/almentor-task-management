@@ -50,6 +50,10 @@ public class TaskRepository : ITaskRepository
 
     private static IQueryable<TaskItem> ApplyFilters(IQueryable<TaskItem> tasks, TaskListQuery query)
     {
+        // Ownership scope: a task belongs to the caller iff its project does.
+        // Translates to a predicate on the already-present Projects JOIN.
+        tasks = tasks.Where(t => t.Project.OwnerId == query.OwnerId);
+
         if (query.ProjectId is not null)
         {
             tasks = tasks.Where(t => t.ProjectId == query.ProjectId.Value);

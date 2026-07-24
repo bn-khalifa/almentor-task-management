@@ -1,12 +1,14 @@
 using Almentor.TaskApi.Application.Common.Models;
 using Almentor.TaskApi.Application.Features.Projects;
 using Almentor.TaskApi.Application.Features.Projects.Dtos;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Almentor.TaskApi.Api.Controllers;
 
 [ApiController]
 [Route("api/projects")]
+[Authorize]
 public class ProjectsController : ControllerBase
 {
     private readonly IProjectService _projectService;

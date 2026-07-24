@@ -8,6 +8,8 @@ namespace Almentor.TaskApi.Application.Features.Tasks.Querying;
 // deals with parsing or invalid input — only real enum/date values.
 public class TaskListQuery
 {
+    // The owner whose tasks to return — always set; a user only sees their own.
+    public Guid OwnerId { get; init; }
     public Guid? ProjectId { get; init; }
     public TaskItemStatus? Status { get; init; }
     public TaskItemPriority? Priority { get; init; }

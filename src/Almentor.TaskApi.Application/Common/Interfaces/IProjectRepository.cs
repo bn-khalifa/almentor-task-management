@@ -11,10 +11,12 @@ public interface IProjectRepository
     // cascade to the project's tasks in memory. Reads use GetByIdAsync instead.
     Task<Project?> GetByIdWithTasksAsync(Guid id, CancellationToken ct);
 
-    Task<PagedResult<Project>> GetPagedAsync(PaginationParams pagination, CancellationToken ct);
+    // Scoped to the owner — a user only ever lists their own projects.
+    Task<PagedResult<Project>> GetPagedAsync(Guid ownerId, PaginationParams pagination, CancellationToken ct);
 
-    // Case-insensitive existence check used for the app-layer duplicate-name pre-check
-    Task<bool> ExistsByNameAsync(string name, Guid? excludeId, CancellationToken ct);
+    // Case-insensitive duplicate-name pre-check, scoped per owner (names are
+    // unique within an owner, not globally).
+    Task<bool> ExistsByNameAsync(Guid ownerId, string name, Guid? excludeId, CancellationToken ct);
 
     Task AddAsync(Project project, CancellationToken ct);
 
