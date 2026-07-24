@@ -49,6 +49,9 @@ public static class DependencyInjection
         services.AddSingleton<IPasswordHasher, PasswordHasher>();
         services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
 
+        // Startup migrate + seed (invoked from Program.cs).
+        services.AddScoped<DbInitializer>();
+
         return services;
     }
 }

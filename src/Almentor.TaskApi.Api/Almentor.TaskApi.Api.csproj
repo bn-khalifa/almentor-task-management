@@ -16,6 +16,7 @@
     </PackageReference>
     <!-- Pin transitive dep: 2.0.0 has GHSA-v5pm-xwqc-g5wc (high severity) -->
     <PackageReference Include="Microsoft.OpenApi" Version="2.11.0" />
+    <PackageReference Include="Scalar.AspNetCore" Version="2.16.16" />
   </ItemGroup>
 
   <ItemGroup>

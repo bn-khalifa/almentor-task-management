@@ -23,5 +23,28 @@ services:
       retries: 10
       start_period: 30s
 
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: almentor-api
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+    environment:
+      # Development (not Production) so Scalar's interactive API docs are
+      # exposed at /scalar — deliberate for easy evaluation of this take-home;
+      # a real production deploy would use Production and lock this down.
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: http://+:8080
+      # `sqlserver` here is the Docker-network service name, not "localhost" —
+      # containers reach each other by service name on the internal network,
+      # over the container's own port 1433 (not the host-mapped 14330 above,
+      # which only matters for host -> container access).
+      ConnectionStrings__DefaultConnection: "Server=sqlserver,1433;Database=AlmentorTaskDb;User Id=sa;Password=${SA_PASSWORD};TrustServerCertificate=True;Encrypt=True"
+      Jwt__Key: ${JWT_KEY}
+    ports:
+      - "8080:8080"
+
 volumes:
   sqlserver-data:

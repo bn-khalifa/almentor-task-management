@@ -8,7 +8,9 @@ using Almentor.TaskApi.Application.Common.Errors;
 using Almentor.TaskApi.Application.Common.Interfaces;
 using Almentor.TaskApi.Application.Common.Models;
 using Almentor.TaskApi.Infrastructure;
+using Almentor.TaskApi.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Mvc;
+using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -78,10 +80,22 @@ builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
 
 var app = builder.Build();
 
+// Apply pending migrations, then seed sample data if the DB is empty — so a
+// bare `docker compose up` (or a fresh `dotnet run`) yields a fully working,
+// browsable API with zero manual setup. Seeding is skipped under the
+// WebApplicationFactory-driven integration tests (env "Testing"), which manage
+// their own known dataset per test via SqlServerFixture/IntegrationTestBase.
+using (var scope = app.Services.CreateScope())
+{
+    var initializer = scope.ServiceProvider.GetRequiredService<DbInitializer>();
+    await initializer.InitializeAsync(seed: !app.Environment.IsEnvironment("Testing"));
+}
+
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
+    app.MapScalarApiReference(); // interactive API docs at /scalar
 }
 
 // First in the pipeline so it catches exceptions from every later stage.
