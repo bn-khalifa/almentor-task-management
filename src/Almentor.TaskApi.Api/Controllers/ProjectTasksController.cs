@@ -1,13 +1,12 @@
 using Almentor.TaskApi.Application.Common.Models;
 using Almentor.TaskApi.Application.Features.Tasks;
 using Almentor.TaskApi.Application.Features.Tasks.Dtos;
+using Almentor.TaskApi.Application.Features.Tasks.Querying;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Almentor.TaskApi.Api.Controllers;
 
-/// <summary>
-/// Task operations that are scoped to a parent project.
-/// </summary>
+// Task operations that are scoped to a parent project.
 [ApiController]
 [Route("api/projects/{projectId:guid}/tasks")]
 public class ProjectTasksController : ControllerBase
@@ -32,5 +31,15 @@ public class ProjectTasksController : ControllerBase
             controllerName: "Tasks",
             routeValues: new { id = task.Id },
             value: ApiResponse<TaskResponse>.Ok(task));
+    }
+
+    [HttpGet]
+    [ProducesResponseType(typeof(ApiResponse<IReadOnlyList<TaskResponse>>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<ApiResponse<IReadOnlyList<TaskResponse>>>> GetForProject(
+        Guid projectId, [FromQuery] TaskQueryParameters query, CancellationToken ct)
+    {
+        var page = await _taskService.GetPagedAsync(projectId, query, ct);
+        return Ok(page.ToApiResponse());
     }
 }

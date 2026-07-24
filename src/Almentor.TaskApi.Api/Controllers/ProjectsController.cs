@@ -33,13 +33,7 @@ public class ProjectsController : ControllerBase
     public async Task<ActionResult<ApiResponse<IReadOnlyList<ProjectResponse>>>> GetPaged([FromQuery] PaginationParams pagination, CancellationToken ct)
     {
         var page = await _projectService.GetPagedAsync(pagination, ct);
-
-        var meta = new ResponseMeta
-        {
-            Pagination = new PaginationMeta { Total = page.Total, Offset = page.Offset, Limit = page.Limit }
-        };
-
-        return Ok(ApiResponse<IReadOnlyList<ProjectResponse>>.Ok(page.Items, meta));
+        return Ok(page.ToApiResponse());
     }
 
     [HttpGet("{id:guid}")]

@@ -1,6 +1,7 @@
 using Almentor.TaskApi.Application.Common.Models;
 using Almentor.TaskApi.Application.Features.Tasks;
 using Almentor.TaskApi.Application.Features.Tasks.Dtos;
+using Almentor.TaskApi.Application.Features.Tasks.Querying;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Almentor.TaskApi.Api.Controllers;
@@ -14,6 +15,16 @@ public class TasksController : ControllerBase
     public TasksController(ITaskService taskService)
     {
         _taskService = taskService;
+    }
+
+    [HttpGet]
+    [ProducesResponseType(typeof(ApiResponse<IReadOnlyList<TaskResponse>>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<ApiResponse<IReadOnlyList<TaskResponse>>>> GetAll(
+        [FromQuery] TaskQueryParameters query, CancellationToken ct)
+    {
+        // projectId null => across all projects; each row still carries projectName.
+        var page = await _taskService.GetPagedAsync(projectId: null, query, ct);
+        return Ok(page.ToApiResponse());
     }
 
     [HttpGet("{id:guid}")]
