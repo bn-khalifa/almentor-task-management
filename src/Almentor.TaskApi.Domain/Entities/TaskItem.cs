@@ -3,7 +3,7 @@ using Almentor.TaskApi.Domain.Enums;
 
 namespace Almentor.TaskApi.Domain.Entities;
 
-public class TaskItem : AuditableEntity
+public class TaskItem : AuditableEntity, ISoftDeletable
 {
     /// Foreign key to the owning project (required)
     public Guid ProjectId { get; set; }
@@ -18,6 +18,9 @@ public class TaskItem : AuditableEntity
 
     // Optional deadline
     public DateOnly? DueDate { get; set; }
+
+    // Set when the task is soft-deleted; null while live (see ISoftDeletable).
+    public DateTime? DeletedAt { get; set; }
 
     // Navigation back to the owning project
     public Project Project { get; set; } = null!;

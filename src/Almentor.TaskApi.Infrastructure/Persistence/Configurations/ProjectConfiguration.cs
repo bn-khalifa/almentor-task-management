@@ -24,8 +24,11 @@ public class ProjectConfiguration : IEntityTypeConfiguration<Project>
             .HasMaxLength(2000);
 
         // DB-level enforcement of "duplicate project names should be rejected".
+        // Filtered on live rows only, so a soft-deleted project's name is freed
+        // up for reuse rather than being reserved forever.
         builder.HasIndex(p => p.Name)
             .IsUnique()
+            .HasFilter("[DeletedAt] IS NULL")
             .HasDatabaseName("UX_Projects_Name");
 
         // One project owns many tasks; deleting the project cascade deletes them.

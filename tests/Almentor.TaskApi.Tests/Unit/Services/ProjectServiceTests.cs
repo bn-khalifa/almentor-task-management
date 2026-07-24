@@ -56,8 +56,9 @@ public class ProjectServiceTests
     public async Task Delete_removes_the_project_and_saves()
     {
         var project = new Project { Id = Guid.NewGuid(), Name = "To Delete" };
+        // Delete loads the aggregate (project + tasks) for cascade soft-delete.
         _factory.ProjectRepository
-            .GetByIdAsync(project.Id, Arg.Any<CancellationToken>())
+            .GetByIdWithTasksAsync(project.Id, Arg.Any<CancellationToken>())
             .Returns(project);
 
         await _factory.ProjectService.DeleteAsync(project.Id, CancellationToken.None);

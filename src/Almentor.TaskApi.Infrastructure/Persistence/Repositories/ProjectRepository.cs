@@ -27,6 +27,14 @@ public class ProjectRepository : IProjectRepository
         // by default would only add overhead to the common read case.
         _context.Projects.AsNoTracking().FirstOrDefaultAsync(p => p.Id == id, ct);
 
+    public Task<Project?> GetByIdWithTasksAsync(Guid id, CancellationToken ct) =>
+        // Tracked (no AsNoTracking) + Tasks loaded: Remove(project) then cascades
+        // to these tracked tasks, which the soft-delete converter turns into
+        // DeletedAt stamps. The query filter means only live tasks are loaded.
+        _context.Projects
+            .Include(p => p.Tasks)
+            .FirstOrDefaultAsync(p => p.Id == id, ct);
+
     public async Task<PagedResult<Project>> GetPagedAsync(PaginationParams pagination, CancellationToken ct)
     {
         var query = _context.Projects.AsNoTracking().OrderBy(p => p.CreatedAt);

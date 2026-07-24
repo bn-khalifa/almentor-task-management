@@ -91,10 +91,12 @@ public class ProjectService : IProjectService
 
     public async Task DeleteAsync(Guid id, CancellationToken ct)
     {
-        var project = await _repository.GetByIdAsync(id, ct)
+        // Load tracked WITH tasks so the delete cascades to them in memory —
+        // required for soft-delete, since the DB's ON DELETE CASCADE only fires
+        // on a hard delete, which the DbContext converts away.
+        var project = await _repository.GetByIdWithTasksAsync(id, ct)
             ?? throw new NotFoundException(nameof(Project), id);
 
-        // Cascade delete of tasks is handled in configurations
         _repository.Remove(project);
         await _repository.SaveChangesAsync(ct);
     }

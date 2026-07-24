@@ -7,6 +7,10 @@ public interface IProjectRepository
 {
     Task<Project?> GetByIdAsync(Guid id, CancellationToken ct);
 
+    // Delete-path load: tracked and with Tasks included, so soft-delete can
+    // cascade to the project's tasks in memory. Reads use GetByIdAsync instead.
+    Task<Project?> GetByIdWithTasksAsync(Guid id, CancellationToken ct);
+
     Task<PagedResult<Project>> GetPagedAsync(PaginationParams pagination, CancellationToken ct);
 
     // Case-insensitive existence check used for the app-layer duplicate-name pre-check
