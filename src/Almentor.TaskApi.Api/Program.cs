@@ -98,3 +98,8 @@ static string CleanErrorMessage(string rawMessage) =>
     rawMessage.Contains("could not be converted")
         ? "The value provided is not valid for this field."
         : rawMessage;
+
+// Makes the implicit Program class reachable so integration tests can spin up
+// the real app via WebApplicationFactory<Program> (top-level statements alone
+// generate an internal Program class, invisible outside this assembly).
+public partial class Program;
