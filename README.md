@@ -157,6 +157,24 @@ Password rules: 8–128 characters. Errors: `409 EMAIL_TAKEN` (register), `401
 INVALID_CREDENTIALS` (login), `401 UNAUTHORIZED` (missing/invalid/expired token on a
 protected endpoint).
 
+#### Testing authenticated endpoints in Scalar (`/scalar`)
+
+Scalar doesn't currently show a dedicated "Authorize" button for this API, so the token has
+to be attached as a header manually:
+
+1. Call `POST /api/auth/login` (or `/register`) from the Scalar UI and copy the
+   `data.accessToken` value from the response.
+2. Open the endpoint you want to call (e.g. `GET /api/projects`) and find the **Headers**
+   section of the request panel.
+3. Add a new header:
+   - **Key:** `Authorization`
+   - **Value:** `Bearer <token>` — literally the word `Bearer`, one space, then the token.
+     Do **not** include angle brackets (`<`/`>`) — those just mean "put your token here".
+4. Click **Send**.
+
+The same applies to any HTTP client (curl, Postman, etc.) — every request to `/api/projects`
+or `/api/tasks` needs that same `Authorization: Bearer <token>` header.
+
 ### Projects
 
 All project endpoints are scoped to the authenticated user — you only ever see/manage your
